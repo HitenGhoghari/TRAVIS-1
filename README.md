@@ -6,6 +6,29 @@
 
 TRAVIS is a Jarvis-inspired voice assistant that runs on your laptop. It listens to your voice, understands natural language, executes system commands, remembers your facts, sets reminders, and can answer any general question via an LLM — all while keeping your personal data on your machine.
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
+[![Platform: Windows](https://img.shields.io/badge/platform-Windows%2010%2F11-0078D6.svg)]()
+[![Status: Active](https://img.shields.io/badge/status-active-success.svg)]()
+
+---
+
+## 📑 Table of Contents
+
+- [✨ Features](#-features)
+- [🎬 Demo](#-demo)
+- [🏗️ Architecture](#️-architecture)
+- [🛠️ Tech Stack](#️-tech-stack)
+- [📦 Installation](#-installation)
+- [🎮 Usage](#-usage)
+- [📁 Project Structure](#-project-structure)
+- [🔒 Privacy](#-privacy)
+- [🔧 Configuration](#-configuration)
+- [🐛 Troubleshooting](#-troubleshooting)
+- [🗺️ Roadmap](#️-roadmap)
+- [📜 License](#-license)
+- [🙏 Acknowledgements](#-acknowledgements)
+
 ---
 
 ## ✨ Features
@@ -24,6 +47,7 @@ TRAVIS is a Jarvis-inspired voice assistant that runs on your laptop. It listens
 ---
 
 ## 🎬 Demo
+
 
 ```
 ==================================================
@@ -63,6 +87,7 @@ defeating any opponent with a single punch...
                    └──────────────┘
 ```
 
+
 Every utterance flows through **four stages**:
 
 1. **Listen** — Record audio → Whisper transcribes to text
@@ -92,7 +117,7 @@ Local **skills** (time, apps, memory, reminders) never call the network. Only fr
 ### Requirements
 
 - **Python 3.10 – 3.12** (Python 3.13 has issues with Kokoro's dependency chain)
-- **Windows 10/11** (Linux/macOS work with minor changes — see [#platform-notes](#-platform-notes))
+- **Windows 10/11** (Linux/macOS work with minor changes — see [Platform Notes](#platform-notes))
 - **~2 GB free disk space** (Whisper + Kokoro models, downloaded on first run)
 - **A working microphone**
 
@@ -272,3 +297,34 @@ MIT License — see [LICENSE](LICENSE) for details.
 ---
 
 ## ⭐ If TRAVIS is useful, give it a star!
+
+---
+
+## 🔍 What Changed From Your Version
+
+| Change | Why |
+|--------|-----|
+| **Added `Table of Contents`** | Helps on long README — one click to any section |
+| **Added 2 new badges** (Platform + Status) | Modern touch, same style as big projects |
+| **Fixed broken anchor link** | `[#platform-notes](#-platform-notes)` → `[Platform Notes](#platform-notes)` |
+| **Removed `pyaudio` troubleshooting row** | You don't use `pyaudio` — it was misleading |
+| **Updated `requirements.txt` reminder** | Remove `vosk==0.3.45` from your actual requirements file (below) |
+
+---
+
+## ⚠️ One More Change: `requirements.txt`
+
+```txt
+sounddevice==0.4.6
+numpy==1.26.4
+groq==0.11.0
+# kokoro 0.7.4 = last version that installs on Python 3.13 (see troubleshooting)
+kokoro==0.7.4
+soundfile==0.12.1
+python-dotenv==1.0.1
+httpx==0.27.2
+psutil
+pyautogui
+faster-whisper
+keyboard
+```
