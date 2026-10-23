@@ -1,0 +1,13 @@
+vosk==0.3.45
+sounddevice==0.4.6
+numpy==1.26.4
+groq==0.11.0
+# kokoro 0.7.4 = last version that installs on Python 3.13 (see troubleshooting)
+kokoro==0.7.4
+soundfile==0.12.1
+python-dotenv==1.0.1
+httpx==0.27.2
+psutil
+pyautogui
+faster-whisper
+keyboard

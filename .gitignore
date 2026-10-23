@@ -1,0 +1,95 @@
+# ============================================================
+#  SECRETS — NEVER commit these
+# ============================================================
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets.json
+
+# ============================================================
+#  Python
+# ============================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Pytest / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# ============================================================
+#  Project-specific
+# ============================================================
+# Personal memory (contains private facts, passwords, reminders)
+data/
+!data/.gitkeep
+
+# Models (large, downloaded at runtime)
+models/
+piper_models/
+*.onnx
+*.onnx.json
+
+# Logs
+logs/
+!logs/.gitkeep
+
+# Screenshots & audio temp files
+screenshot.png
+*.wav
+*.mp3
+temp_*.wav
+temp_*.mp3
+output_gu.wav
+temp_piper_output.wav
+
+# ============================================================
+#  IDE / Editor
+# ============================================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ============================================================
+#  OS
+# ============================================================
+.DS_Store
+.Spotlight-V100
+.Trashes
+ehthumbs.db
