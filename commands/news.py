@@ -152,3 +152,42 @@ COMMANDS = [
     (r"\bnews\s+(?:about|on|for)\s+(.+)", _get_news),
     (r"\b(?:tell\s+me|give\s+me|show\s+me)\s+(?:the\s+)?news\s+(?:about|on|for)\s+(.+)", _get_news),
 ]
+
+
+def get_headlines(n=3, topic=None) -> list:
+    """
+    Public API for briefing module.
+    Returns a list of headline strings, or [] on failure.
+    """
+    try:
+        if topic:
+            query = topic.replace(" ", "+")
+            url = GOOGLE_NEWS_SEARCH.format(query=query)
+        else:
+            url = GOOGLE_NEWS_TOP
+
+        articles = _parse_feed(url)
+        if not articles:
+            return []
+
+        # Dedup + skip already-seen
+        seen = _load_seen()
+        seen_set = set(seen)
+        unseen = [a for a in articles if a["url"] not in seen_set]
+
+        if not unseen:
+            unseen = articles
+
+        random.shuffle(unseen)
+        picked = unseen[:n]
+
+        # Mark picked as seen
+        for a in picked:
+            if a["url"] and a["url"] not in seen_set:
+                seen.append(a["url"])
+                seen_set.add(a["url"])
+        _save_seen(seen)
+
+        return [a["title"] for a in picked if a.get("title")]
+    except Exception:
+        return []

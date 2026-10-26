@@ -16,3 +16,5 @@ requests
 pyperclip
 screen-brightness-control
 feedparser
+huggingface_hub
+scipy

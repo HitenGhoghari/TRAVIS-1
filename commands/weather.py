@@ -301,3 +301,27 @@ COMMANDS = [
     (r"\bair\s+quality(?:\s+(?:in|at|for)\s+(.+?))?\s*[.?!]?\s*$", _air_quality),
     (r"\bhow\s+(?:polluted|smoggy)\s+is\s+it(?:\s+(?:in|at)\s+(.+?))?\s*[.?!]?\s*$", _air_quality),
 ]
+
+def get_current_weather_string(city=None) -> str:
+    """
+    Public API for briefing module.
+    Returns a spoken weather sentence, or '' on failure.
+    """
+    if not OPENWEATHER_API_KEY:
+        return ""
+    try:
+        lat, lon, place = _resolve_place(city)
+        r = requests.get(
+            WEATHER_URL,
+            params={
+                "lat": lat, "lon": lon,
+                "units": WEATHER_UNITS, "appid": OPENWEATHER_API_KEY,
+            },
+            timeout=8,
+        )
+        if r.status_code == 401:
+            return ""
+        r.raise_for_status()
+        return _speak_weather(r.json(), place)
+    except Exception:
+        return ""

@@ -27,8 +27,8 @@ def _what_can_i_do(match, text):
 
 
 COMMANDS = [
-    (r"\bwhat\s+can\s+you\s+do\b"
-     r"|\bwhat\s+are\s+your\s+capabilities\b"
-     r"|\bwhat\s+can\s+you\s+help\s+with\b"
-     r"|\bwhat\s+are\s+you\s+able\s+to\s+do\b", _what_can_i_do),
+    (r"\bwhat can you do\b", _what_can_i_do),
+    (r"\bwhat are your capabilities\b", _what_can_i_do),
+    (r"\bwhat can you help with\b", _what_can_i_do),
+    (r"\bwhat are you able to do\b", _what_can_i_do),
 ]

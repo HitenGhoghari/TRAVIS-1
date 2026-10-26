@@ -14,7 +14,7 @@ from commands import (
 
 SKILLS = [
     about,
-    conversation_skill,   # ← before memory_skill
+    conversation_skill,
     memory_skill,
     system,
     weather,
@@ -26,11 +26,32 @@ SKILLS = [
 ]
 
 
+def _is_safe_pattern(pattern: str) -> bool:
+    """Reject empty or trivially-matching patterns."""
+    if not pattern or not pattern.strip():
+        return False
+    # Reject patterns that match empty string (catch-alls)
+    try:
+        if re.search(pattern, "") is not None:
+            return False
+    except re.error:
+        return False
+    return True
+
+
 def handle(user_input: str):
     text = user_input.lower().strip()
 
     for skill in SKILLS:
-        for pattern, handler in skill.COMMANDS:
+        for entry in getattr(skill, "COMMANDS", []):
+            if not isinstance(entry, tuple) or len(entry) != 2:
+                continue
+            pattern, handler = entry
+
+            if not _is_safe_pattern(pattern):
+                print(f"[WARNING] Skipping unsafe pattern in {skill.__name__}: {pattern!r}")
+                continue
+
             match = re.search(pattern, text)
             if match:
                 try:

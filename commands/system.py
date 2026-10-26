@@ -121,18 +121,26 @@ def _sleep(match, text):
 
 def _restart(match, text):
     subprocess.run(
-        'shutdown /r /t 60 /c "TRAVIS: Restart in 60 seconds. Say cancel restart to abort."',
-        shell=True
+        'shutdown /r /t 120 /c "TRAVIS: Restart in 120 seconds. '
+        'Say: cancel restart. Or: stop. Or: cancel."',
+        shell=True,
     )
-    return "Restarting in 60 seconds. Say cancel restart to abort."
+    return (
+        "Restarting in 120 seconds. "
+        "Say cancel restart, or just say stop, or say cancel, to abort."
+    )
 
 
 def _shutdown(match, text):
     subprocess.run(
-        'shutdown /s /t 60 /c "TRAVIS: Shutdown in 60 seconds. Say cancel shutdown to abort."',
-        shell=True
+        'shutdown /s /t 120 /c "TRAVIS: Shutdown in 120 seconds. '
+        'Say: cancel shutdown. Or: stop. Or: cancel."',
+        shell=True,
     )
-    return "Shutting down in 60 seconds. Say cancel shutdown to abort."
+    return (
+        "Shutting down in 120 seconds. "
+        "Say cancel shutdown, or just say stop, or say cancel, to abort."
+    )
 
 
 def _logoff(match, text):
@@ -141,10 +149,12 @@ def _logoff(match, text):
 
 
 def _cancel_shutdown(match, text):
-    result = subprocess.run("shutdown /a", shell=True, capture_output=True, text=True)
+    result = subprocess.run(
+        "shutdown /a", shell=True, capture_output=True, text=True
+    )
     if result.returncode == 0:
-        return "Cancelled."
-    return "Nothing to cancel."
+        return "Cancelled. No restart or shutdown will happen."
+    return "There's nothing to cancel."
 
 
 # ---------- Recycle bin ----------
@@ -165,6 +175,33 @@ def _empty_recycle(match, text):
 # ORDER MATTERS — cancel, then destructive, then informational
 COMMANDS = [
     # Cancel MUST come before shutdown/restart
+        # ---- Cancel patterns — put these FIRST, before any restart/shutdown ----
+
+    # "cancel" anywhere + restart/shutdown/reboot anywhere (order agnostic)
+    (r"\bcancel\b.*\b(?:shutdown|restart|reboot|shut\s*down|power\s*off|log\s*off)\b",
+     _cancel_shutdown),
+    (r"\b(?:shutdown|restart|reboot|shut\s*down|power\s*off|log\s*off)\b.*\bcancel\b",
+     _cancel_shutdown),
+
+    # "stop / abort / halt / prevent" + action word
+    (r"\b(?:stop|abort|halt|prevent|kill|end)\b.*\b(?:shutdown|restart|reboot|shut\s*down)\b",
+     _cancel_shutdown),
+    (r"\b(?:shutdown|restart|reboot|shut\s*down)\b.*\b(?:stop|abort|halt|prevent|cancel|kill)\b",
+     _cancel_shutdown),
+
+    # "don't restart / no restart / not restart"
+    (r"\b(?:don'?t|do\s+not|no|not)\s+(?:restart|shut\s*down|reboot|log\s*off)\b",
+     _cancel_shutdown),
+
+    # Standalone phrases — "cancel", "abort", "never mind", "forget it"
+    (r"^\s*(?:cancel|abort|halt)\s*[.!?]?\s*$", _cancel_shutdown),
+    (r"^\s*never\s*mind\s*[.!?]?\s*$", _cancel_shutdown),
+    (r"^\s*forget\s+(?:it|that|about\s+it)\s*[.!?]?\s*$", _cancel_shutdown),
+    (r"^\s*(?:stop|wait)\s*[.!?]?\s*$", _cancel_shutdown),
+    (r"^\s*stop\s+(?:it|that)\s*[.!?]?\s*$", _cancel_shutdown),
+    (r"^\s*don'?t\s+(?:do\s+it|do\s+that)\s*[.!?]?\s*$", _cancel_shutdown),
+
+    # Legacy explicit form
     (r"\bcancel\s+(?:the\s+)?(?:shutdown|restart|reboot)\b", _cancel_shutdown),
     (r"\babort\s+(?:the\s+)?(?:shutdown|restart|reboot)\b", _cancel_shutdown),
 
