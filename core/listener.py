@@ -1,9 +1,14 @@
 import queue
 import time
+
 import numpy as np
 import sounddevice as sd
 from faster_whisper import WhisperModel
-from config import SILENCE_TIMEOUT, INPUT_MODE, PUSH_TO_TALK_HOTKEY
+
+from config import (
+    INPUT_MODE, PUSH_TO_TALK_HOTKEY, SILENCE_TIMEOUT,
+)
+from core import ui
 
 WHISPER_MODEL_SIZE = "small"
 
@@ -33,22 +38,17 @@ class Listener:
 
         self.push_to_talk = (INPUT_MODE == "ptt" and _HAS_KEYBOARD)
         if INPUT_MODE == "ptt" and not _HAS_KEYBOARD:
-            print("[Warning] 'keyboard' library not installed — using VAD mode")
-            print("[Warning] To enable push-to-talk: pip install keyboard")
+            ui.set_status("⚠ keyboard not installed — using VAD")
 
-        # Warm-up — pays Whisper's first-inference cost now, not on your first question
         try:
             silence = np.zeros(1600, dtype=np.float32)
             list(self.whisper_model.transcribe(silence, language="en"))
         except Exception:
             pass
 
-        if self.push_to_talk:
-            print(f"🎤 Push-to-talk active. Hold {PUSH_TO_TALK_HOTKEY.upper()} to speak.")
-
     def _callback(self, indata, frames, time_info, status):
         if status:
-            print(f"[audio status] {status}")
+            ui.set_status(f"⚠ audio: {status}")
         self.audio_queue.put(indata.copy())
 
     def _drain(self):
@@ -71,7 +71,7 @@ class Listener:
         )
         text = " ".join(seg.text.strip() for seg in segments).strip()
         if text:
-            print(f"You: {text}")
+            ui.set_you(text)
         return text
 
     def listen(self, silence_timeout=SILENCE_TIMEOUT):
@@ -79,15 +79,13 @@ class Listener:
             return self._listen_ptt()
         return self._listen_vad(silence_timeout)
 
-    # ---------- Push-to-talk ----------
     def _listen_ptt(self):
         self._drain()
-
         while not keyboard.is_pressed(PUSH_TO_TALK_HOTKEY):
             time.sleep(0.05)
         time.sleep(0.05)
 
-        print("🔴 Recording...")
+        ui.set_status("🔴 Recording...")
         audio_chunks = []
 
         with sd.InputStream(
@@ -96,12 +94,10 @@ class Listener:
         ):
             while keyboard.is_pressed(PUSH_TO_TALK_HOTKEY):
                 try:
-                    chunk = self.audio_queue.get(timeout=0.05)
-                    audio_chunks.append(chunk)
+                    audio_chunks.append(self.audio_queue.get(timeout=0.05))
                 except queue.Empty:
                     pass
 
-        # Grace period for in-flight audio
         time.sleep(0.15)
         while not self.audio_queue.empty():
             try:
@@ -109,13 +105,12 @@ class Listener:
             except queue.Empty:
                 break
 
-        print("⏹️  Processing...")
+        ui.set_status("⏹️  Processing...")
         return self._transcribe(audio_chunks)
 
-    # ---------- Voice-activity mode ----------
     def _listen_vad(self, silence_timeout):
         self._drain()
-
+        ui.set_status("🎤 Listening...")
         audio_chunks = []
         last_speech_time = time.time()
         noise_floor = None
@@ -127,21 +122,19 @@ class Listener:
             while True:
                 chunk = self.audio_queue.get()
                 audio_chunks.append(chunk)
-
                 rms = float(np.sqrt(np.mean(chunk ** 2)))
 
-                # Adaptive noise floor — fast down, slow up
                 if noise_floor is None:
                     noise_floor = rms
                 else:
                     alpha = 0.3 if rms < noise_floor else 0.02
                     noise_floor = alpha * rms + (1 - alpha) * noise_floor
 
-                # Speech = 3.5× above room baseline
                 if rms > max(noise_floor * 3.5, 0.005):
                     last_speech_time = time.time()
 
                 if time.time() - last_speech_time > silence_timeout:
                     break
 
+        ui.set_status("⏹️  Processing...")
         return self._transcribe(audio_chunks)

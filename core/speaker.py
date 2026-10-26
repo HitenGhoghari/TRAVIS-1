@@ -1,13 +1,15 @@
-import re
 import queue
+import re
 import threading
+
 import sounddevice as sd
 from kokoro import KPipeline
+
 from config import KOKORO_LANG, KOKORO_VOICE, KOKORO_SPEED
+from core import ui
 
 
 def clean_for_speech(text: str) -> str:
-    """Strip markdown, bullets, and newlines so Kokoro speaks smoothly."""
     text = re.sub(r"[*#`_>]", "", text)
     text = re.sub(r"\s*\n\s*", " ", text)
     text = re.sub(r"\s+", " ", text)
@@ -16,9 +18,8 @@ def clean_for_speech(text: str) -> str:
 
 class Speaker:
     def __init__(self):
-        self.pipeline = KPipeline(lang_code=KOKORO_LANG, repo_id="hexgrad/Kokoro-82M")
-
-        # Pre-warm — synthesis is lazy, so the first real call is always slow.
+        self.pipeline = KPipeline(lang_code=KOKORO_LANG)
+        self.last_spoken = ""   # ← new: tracks the most recent spoken text
         try:
             list(self.pipeline(
                 "Ready.", voice=KOKORO_VOICE, speed=KOKORO_SPEED,
@@ -27,40 +28,59 @@ class Speaker:
         except Exception:
             pass
 
-    def speak(self, text: str):
-        text = clean_for_speech(text)
-        print(f"TRAVIS: {text}")
-
-        # Buffer holds pre-synthesized audio chunks
-        audio_queue: "queue.Queue" = queue.Queue(maxsize=4)
+    def _play_audio(self, text: str):
+        audio_queue = queue.Queue(maxsize=4)
 
         def producer():
-            """Synthesize each sentence and push it to the queue."""
             try:
                 for _, _, audio in self.pipeline(
                     text,
                     voice=KOKORO_VOICE,
                     speed=KOKORO_SPEED,
-                    split_pattern=r"(?<=[.!?])\s+",   # sentence-level
+                    split_pattern=r"(?<=[.!?])\s+",
                 ):
                     audio_queue.put(audio)
             finally:
-                audio_queue.put(None)  # sentinel: synthesis done
+                audio_queue.put(None)
 
         thread = threading.Thread(target=producer, daemon=True)
         thread.start()
 
-        # Main thread: play chunks as they arrive
-        first = True
         while True:
             audio = audio_queue.get()
             if audio is None:
                 break
-
-            # On the very first chunk, add a tiny fade-in so there's no
-            # click when audio starts (optional, harmless).
-            if first:
-                first = False
-
             sd.play(audio, samplerate=24000)
-            sd.wait()   # block only while playing; producer keeps working
+            sd.wait()
+
+    def speak(self, text: str):
+        text = clean_for_speech(text)
+        self.last_spoken = text        # ← update before playing
+        ui.set_travis(text, streaming=False)
+        self._play_audio(text)
+
+    def speak_stream(self, text_iterator):
+        buffer = ""
+        full_text = ""
+
+        for chunk in text_iterator:
+            buffer += chunk
+            while True:
+                positions = [buffer.find(p) for p in ".!?" if p in buffer]
+                if not positions:
+                    break
+                idx = min(positions)
+                sentence = buffer[: idx + 1].strip()
+                buffer = buffer[idx + 1:].lstrip()
+                if sentence:
+                    full_text = (full_text + " " + sentence).strip()
+                    ui.set_travis(full_text, streaming=True)
+                    self._play_audio(sentence)
+
+        if buffer.strip():
+            full_text = (full_text + " " + buffer.strip()).strip()
+            ui.set_travis(full_text, streaming=True)
+            self._play_audio(buffer.strip())
+
+        if full_text:
+            self.last_spoken = full_text   # ← update once for the whole stream

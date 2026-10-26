@@ -1,16 +1,32 @@
 import re
-from commands import memory_skill, system, apps, media
+from commands import (
+    about,
+    conversation_skill,
+    memory_skill,
+    system,
+    weather,
+    news,
+    timer_skill,
+    clipboard_skill,
+    apps,
+    media,
+)
 
-# Add new skill modules to this list as you build them
-SKILLS = [memory_skill, system, apps, media]
+SKILLS = [
+    about,
+    conversation_skill,   # ← before memory_skill
+    memory_skill,
+    system,
+    weather,
+    news,
+    timer_skill,
+    clipboard_skill,
+    apps,
+    media,
+]
 
 
 def handle(user_input: str):
-    """
-    Try to handle the command locally.
-    Returns (handled: bool, reply: str | None).
-    If no skill matches, returns (False, None) → caller falls through to Groq.
-    """
     text = user_input.lower().strip()
 
     for skill in SKILLS:

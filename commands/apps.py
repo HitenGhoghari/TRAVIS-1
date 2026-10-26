@@ -48,6 +48,21 @@ def _close_chrome(match, text):
     return _close_by_name("chrome.exe", "Chrome")
 
 
+# ---------- Close browser tab (YouTube, Google, GitHub) ----------
+def _close_browser_tab(match, text):
+    """
+    Send Ctrl+W to the active window. This closes the current browser tab.
+    Note: it closes whatever tab is active — not specifically YouTube.
+    """
+    try:
+        import pyautogui
+        pyautogui.hotkey("ctrl", "w")
+        return "Closed the active browser tab."
+    except Exception as e:
+        print(f"[close tab error] {e}")
+        return "I couldn't send the close-tab shortcut."
+
+
 # ---------- Verified open ----------
 def _open_verified(name_pattern: str, command: str, display_name: str) -> str:
     def get_pids():
@@ -105,19 +120,29 @@ def _open_github(match, text):
 
 
 COMMANDS = [
+    # Close apps
+    (r"\bclose notepad\b", _close_notepad),
+    (r"\bclose chrome\b", _close_chrome),
+
+    # Close browser tabs
+    (r"\bclose (?:the\s+)?(?:youtube|google|github)(?:\s+tab)?\b", _close_browser_tab),
+    (r"\bclose (?:the\s+)?(?:current\s+)?tab\b", _close_browser_tab),
+
+    # Open apps
     (r"\bopen chrome\b|\blaunch chrome\b", _open_chrome),
     (r"\bopen notepad\b|\blaunch notepad\b", _open_notepad),
     (r"\bopen (calculator|calc)\b|\blaunch (calculator|calc)\b", _open_calc),
     (r"\bopen (file )?explorer\b", _open_explorer),
+
+    # Open websites
     (r"\bopen youtube\b", _open_youtube),
     (r"\bopen google\b", _open_google),
     (r"\bopen github\b", _open_github),
 
+    # Standalone app names
     (r"^\s*chrome\s*\.?$", _open_chrome),
     (r"^\s*notepad\s*\.?$", _open_notepad),
     (r"^\s*(calculator|calc)\s*\.?$", _open_calc),
     (r"^\s*explorer\s*\.?$", _open_explorer),
-
-    (r"\bclose notepad\b", _close_notepad),
-    (r"\bclose chrome\b", _close_chrome),
+    (r"^\s*youtube\s*\.?$", _open_youtube),
 ]
